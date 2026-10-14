@@ -40,12 +40,14 @@ apt-get autoremove --purge -y
 echo "[2/6] Updating APT repositories..."
 apt-get update
 
-# 3. Install Fcitx 5 stack with frontends and engines
-echo "[3/6] Installing Fcitx 5 suite & toolkit frontends..."
+# 3. Install Fcitx 5 stack with frontends and all CJK engines
+echo "[3/6] Installing Fcitx 5 suite, toolkit frontends, and CJK engines..."
 apt-get install -y \
   fcitx5 \
   fcitx5-hangul \
   fcitx5-mozc \
+  fcitx5-chinese-addons \
+  fcitx5-chewing \
   fcitx5-unikey \
   fcitx5-frontend-gtk3 \
   fcitx5-frontend-gtk4 \
@@ -57,12 +59,35 @@ apt-get install -y \
 echo "[4/6] Setting active input framework to fcitx5..."
 su - "$TARGET_USER" -c "im-config -n fcitx5"
 
-# 5. Pre-configure Fcitx 5 profile for Hangul and English
+# 5. Pre-configure Fcitx 5 profile based on user locale
 echo "[5/6] Creating default Fcitx 5 profile and trigger hotkeys..."
 FCITX5_CONFIG_DIR="$TARGET_HOME/.config/fcitx5"
 mkdir -p "$FCITX5_CONFIG_DIR"
 
-cat << 'EOF' > "$FCITX5_CONFIG_DIR/profile"
+# Detect user locale to set initial secondary input method (defaults to Hangul if generic/English)
+USER_LOCALE=$(su - "$TARGET_USER" -c 'echo "${LANG:-}"')
+SECONDARY_IM="hangul"
+case "$USER_LOCALE" in
+  ja*)
+    SECONDARY_IM="mozc"
+    ;;
+  zh_TW*|zh_HK*)
+    SECONDARY_IM="chewing"
+    ;;
+  zh*)
+    SECONDARY_IM="pinyin"
+    ;;
+  vi*)
+    SECONDARY_IM="unikey"
+    ;;
+  ko*|*)
+    SECONDARY_IM="hangul"
+    ;;
+esac
+
+echo "    Configuring initial input methods: keyboard-us + $SECONDARY_IM"
+
+cat << EOF > "$FCITX5_CONFIG_DIR/profile"
 [Groups/0]
 # Group Name
 Name=Default
@@ -79,7 +104,7 @@ Layout=
 
 [Groups/0/Items/1]
 # Name
-Name=hangul
+Name=$SECONDARY_IM
 # Layout
 Layout=
 
@@ -125,6 +150,10 @@ echo "   Please LOG OUT of Cinnamon and LOG BACK IN (or reboot)."
 echo ""
 echo " After logging in:"
 echo "   - Fcitx 5 will start automatically."
-echo "   - You can toggle Hangul with the Hangul key, Ctrl+Space,"
-echo "     or Shift+Space directly inside the Cinnamon menu search."
+echo "   - Default active input method: keyboard-us + $SECONDARY_IM"
+echo "   - Toggle input method using Ctrl+Space, Shift+Space, or Hangul key."
+echo "   - To add or configure Japanese (Mozc), Chinese (Pinyin/Chewing),"
+echo "     Korean (Hangul), or Vietnamese (UniKey):"
+echo "     Open 'Fcitx 5 Configuration' from the application menu or"
+echo "     run 'fcitx5-configtool' in terminal."
 echo "=========================================================="
