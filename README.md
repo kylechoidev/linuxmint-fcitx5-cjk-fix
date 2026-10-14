@@ -9,7 +9,7 @@ An automated tool to resolve Korean (Hangul), Japanese (Mozc), and CJK input met
 Open a terminal (**Ctrl + Alt + T**) and run:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/mailinglistenator/linuxmint-fcitx5-cjk-fix/main/install.sh | sudo bash
+curl -sL https://raw.githubusercontent.com/kylechoidev/linuxmint-fcitx5-cjk-fix/main/install.sh | sudo bash
 ```
 
 Once the script finishes, **log out and log back in** (or reboot). 
